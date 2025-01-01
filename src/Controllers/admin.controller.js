@@ -1,10 +1,10 @@
-import asyncHandler from "../Utils/AsyncHandler.js";
-import ApiError from "../Utils/ApiError.js";
-import User from "../Model/user.model.js";
-import Movie from "../Model/movie.model.js";
 import jwt from "jsonwebtoken";
-import ApiResponce from "../Utils/ApiResponce.js";
+import Movie from "../Model/movie.model.js";
 import Slot from "../Model/slots.model.js";
+import User from "../Model/user.model.js";
+import ApiError from "../Utils/ApiError.js";
+import ApiResponce from "../Utils/ApiResponce.js";
+import asyncHandler from "../Utils/AsyncHandler.js";
 
 const accessMovies = asyncHandler(async (req, res, next) => {
   const token = req.cookies?.accessToken;
@@ -44,13 +44,16 @@ const createSlot = asyncHandler(async (req, res) => {
   }
   const token = req.cookies?.accessToken;
   const verify = jwt.verify(token, process.env.JWT_SECRATE);
+  const checkDate = await Slot.findOne({ slot_date });
+  if (checkDate) {
+    throw new ApiError(400, "slot alredy created in this date");
+  }
   const movie = await Slot.create({
-    movie_id: id,
+    movie: id,
     slot_time,
     slot_date,
-    user_id: verify.id,
+    user: verify.id,
   });
-  console.log("movie", movie);
   if (!movie) {
     throw new ApiError(400, "Failed to create slot");
   }
@@ -59,4 +62,15 @@ const createSlot = asyncHandler(async (req, res) => {
     .json(new ApiResponce(201, movie, "Slot created successfully"));
 });
 
-export { accessMovies, createSlot };
+const getSlots = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    throw new ApiError(400, "Please provide movie id");
+  }
+  const slots = await Slot.find({ movie: id })
+    .populate({ path: "movie", select: "title poster_url" })
+    .populate({ path: "user", select: "username" });
+  res.status(200).json(new ApiResponce(200, slots, "slots fetch successfully"));
+});
+
+export { accessMovies, createSlot, getSlots };

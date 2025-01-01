@@ -1,6 +1,6 @@
-import express from "express";
-import cors from "cors";
 import cookieParsel from "cookie-parser";
+import cors from "cors";
+import express from "express";
 
 const app = express();
 
@@ -43,5 +43,8 @@ app.use("/api/movie", movie);
 
 import admin from "./Routes/admin.route.js";
 app.use("/api/admin", admin);
+
+import booking from "./Routes/booking.route.js";
+app.use("/api/booking", booking);
 
 export default app;
